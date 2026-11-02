@@ -1,0 +1,101 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Appointment | OY3 MORE BARBERSHOP</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="my-booking-page">
+
+<header class="site-header">
+   <a href="/" class="logo">
+        OY3 MORE <span>BARBERSHOP</span>
+    </a>
+    <nav class="main-nav">
+       <a href="/">Home</a>
+        <a href="{{ url_for('booking') }}">Book Now</a>
+    </nav>
+</header>
+
+<main class="manage-booking-page">
+
+    <section class="manage-booking-card">
+
+        <p class="gold-text">OY3 MORE BARBERSHOP</p>
+        <h1>MANAGE YOUR APPOINTMENT</h1>
+        <div class="gold-line"></div>
+
+        <p class="manage-description">
+            Enter your booking reference and phone number
+            to view or manage your appointment.
+        </p>
+
+        {% if error %}
+        <div class="booking-error">{{ error }}</div>
+        {% endif %}
+
+        <form method="POST" action="{{ url_for('my_booking') }}"
+              class="manage-booking-form">
+
+            <label for="booking_id">Booking Reference</label>
+            <input type="text" id="booking_id" name="booking_id"
+                   placeholder="Enter your booking ID" required>
+
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" name="phone"
+                   placeholder="Enter your booking phone number" required>
+
+            <button type="submit" class="gold-button">
+                FIND MY APPOINTMENT
+            </button>
+        </form>
+
+        {% if booking %}
+        <div class="booking-result">
+            <h2>YOUR APPOINTMENT DETAILS</h2>
+
+            <p><strong>Reference:</strong> {{ booking.id }}</p>
+            <p><strong>Name:</strong> {{ booking.full_name }}</p>
+            <p><strong>Phone:</strong> {{ booking.phone }}</p>
+            <p><strong>Branch:</strong> {{ booking.branch }}</p>
+            <p><strong>Service:</strong> {{ booking.service }}</p>
+            <p><strong>Date:</strong> {{ booking.date }}</p>
+            <p><strong>Time:</strong> {{ booking.time }}</p>
+            <p><strong>Price:</strong> GH₵{{ booking.price }}</p>
+            <p><strong>Status:</strong> {{ booking.status }}</p>
+
+            {% if booking.status == 'Pending' %}
+            <form method="POST"
+                  action="{{ url_for('cancel_booking', booking_id=booking.id) }}"
+                  onsubmit="return confirm('Are you sure you want to cancel this appointment?');">
+
+                <input type="hidden" name="phone"
+                       value="{{ booking.phone }}">
+
+                <button type="submit" class="cancel-booking-button">
+                    CANCEL APPOINTMENT
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <a href="/" class="back-home">
+            ← Back to Homepage
+        </a>
+
+    </section>
+
+</main>
+
+<footer class="site-footer">
+    <p>© 2026 OY3 MORE BARBERSHOP. All Rights Reserved.</p>
+</footer>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>

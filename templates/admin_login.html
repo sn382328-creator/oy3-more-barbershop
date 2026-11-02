@@ -1,0 +1,108 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Login | OY3 MORE BARBERSHOP</title>
+
+    <link rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body class="admin-login-body">
+
+    <header class="site-header">
+
+        <a href="/" class="logo">
+            <span>OY3 MORE</span>
+            <small>BARBERSHOP</small>
+        </a>
+
+        <nav class="main-nav">
+            <a href="/">Home</a>
+            <a href="/booking">Book Appointment</a>
+        </nav>
+
+    </header>
+
+
+    <main class="admin-login-page">
+
+        <section class="admin-login-card">
+
+            <div class="admin-login-icon">♛</div>
+
+            <p class="gold-text">OY3 MORE BARBERSHOP</p>
+
+            <h1>ADMIN <span>LOGIN</span></h1>
+
+            <div class="gold-line"></div>
+
+            <p class="admin-login-description">
+                Welcome back. Please log in to manage your barbershop.
+            </p>
+
+
+            {% if error %}
+                <div class="admin-login-error">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+
+            <form method="POST">
+
+                <label for="username">USERNAME</label>
+
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    placeholder="Enter your username"
+                    autocomplete="username"
+                    required
+                >
+
+
+                <label for="password">PASSWORD</label>
+
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    autocomplete="current-password"
+                    required
+                >
+
+
+                <button type="submit" class="gold-button">
+                    LOGIN TO DASHBOARD
+                </button>
+
+            </form>
+
+            <a href="/" class="admin-back-home">
+                ← BACK TO WEBSITE
+            </a>
+
+        </section>
+
+    </main>
+
+
+    <footer class="site-footer">
+
+        <h2>OY3 MORE</h2>
+        <p>BARBERSHOP</p>
+
+        <p class="copyright">
+            &copy; 2026 OY3 MORE BARBERSHOP
+        </p>
+
+    </footer>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

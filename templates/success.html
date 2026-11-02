@@ -1,0 +1,159 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Booking Successful | OY3 MORE BARBERSHOP</title>
+
+    <link rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <header class="site-header">
+        <a href="/" class="logo">
+            <span>OY3 MORE</span>
+            <small>BARBERSHOP</small>
+        </a>
+
+        <nav class="main-nav">
+            <a href="/">Home</a>
+            <a href="/booking">Book Again</a>
+            <a href="/my-booking">My Appointment</a>
+        </nav>
+    </header>
+
+
+    <!-- SUCCESS MESSAGE -->
+    <main class="success-page">
+
+        <div class="success-icon">✓</div>
+
+        <p class="gold-text">YOUR STYLE JOURNEY STARTS HERE</p>
+
+        <h1>BOOKING <span>SUCCESSFUL!</span></h1>
+
+        <div class="gold-line"></div>
+
+        <h2>Thank you, {{ booking.full_name }}!</h2>
+
+        <p class="success-message">
+            Your appointment has been received successfully.
+            We look forward to serving you at OY3 MORE BARBERSHOP.
+        </p>
+
+
+        <!-- APPOINTMENT DETAILS -->
+        <div class="success-card">
+
+            <p class="gold-text">BOOKING CONFIRMATION</p>
+
+            <h3>YOUR APPOINTMENT DETAILS</h3>
+
+            <div class="success-detail">
+                <span>Customer</span>
+                <strong>{{ booking.full_name }}</strong>
+            </div>
+
+            <div class="success-detail">
+                <span>Phone</span>
+                <strong>{{ booking.phone }}</strong>
+            </div>
+
+            <div class="success-detail">
+                <span>Hairstyle</span>
+                <strong>{{ booking.service }}</strong>
+            </div>
+
+            <div class="success-detail">
+                <span>Branch</span>
+                <strong>
+                    {% if booking.branch == 'Branch 1' %}
+                        Ntankoful, Takoradi
+                    {% elif booking.branch == 'Branch 2' %}
+                        Anaji, Takoradi
+                    {% else %}
+                        {{ booking.branch }}
+                    {% endif %}
+                </strong>
+            </div>
+
+            <div class="success-detail">
+                <span>Price</span>
+                <strong class="gold-price">
+                    GH₵{{ booking.price }}
+                </strong>
+            </div>
+
+            <div class="success-detail">
+                <span>Date</span>
+                <strong>{{ booking.appointment_date }}</strong>
+            </div>
+
+            <div class="success-detail">
+                <span>Time</span>
+                <strong>{{ booking.appointment_time }}</strong>
+            </div>
+
+            <div class="success-detail">
+                <span>Status</span>
+                <strong class="booking-status">
+                    {{ booking.status }}
+                </strong>
+            </div>
+
+            <div class="booking-reference">
+                <span>YOUR BOOKING REFERENCE</span>
+                <strong>#{{ booking.id }}</strong>
+            </div>
+
+        </div>
+
+
+        <p class="keep-reference">
+            Please keep your booking reference safe.
+            You will need it to check your appointment.
+        </p>
+
+
+        <!-- WHATSAPP CONFIRMATION -->
+        <div class="success-actions">
+
+            <a
+                href="https://wa.me/2330201363311?text=Hello%20OY3%20MORE%20BARBERSHOP%2C%20I%20have%20successfully%20booked%20an%20appointment.%20My%20booking%20reference%20is%20{{ booking.id }}."
+                target="_blank"
+                rel="noopener"
+                class="gold-button">
+                CONFIRM ON WHATSAPP
+            </a>
+
+            <a href="/my-booking" class="outline-button">
+                MY APPOINTMENT
+            </a>
+
+            <a href="/" class="outline-button">
+                RETURN HOME
+            </a>
+
+        </div>
+
+    </main>
+
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <h2>OY3 MORE</h2>
+        <p>BARBERSHOP</p>
+        <p>LOOK SHARP. FEEL CONFIDENT.</p>
+
+        <p class="copyright">
+            &copy; 2026 OY3 MORE BARBERSHOP. All rights reserved.
+        </p>
+    </footer>
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

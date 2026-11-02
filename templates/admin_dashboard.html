@@ -1,0 +1,331 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Admin Dashboard | OY3 MORE BARBERSHOP</title>
+
+    <link rel="stylesheet"
+    href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <!-- ADMIN HEADER -->
+    <header class="site-header">
+
+        <a href="/" class="logo">
+            <span>OY3 MORE</span>
+            <small>ADMINISTRATION</small>
+        </a>
+
+        <nav class="main-nav">
+            <a href="/">Visit Website</a>
+            <a href="/booking">Book Appointment</a>
+        </nav>
+
+        <a href="{{ url_for('admin_logout') }}" class="nav-book">
+            LOGOUT
+        </a>
+
+    </header>
+
+
+    <main class="admin-dashboard">
+
+        <section class="admin-heading">
+            <p class="gold-text">OY3 MORE BARBERSHOP</p>
+            <h1>ADMIN <span>DASHBOARD</span></h1>
+            <p>Manage your business and customer appointments.</p>
+        </section>
+
+
+        <!-- BUSINESS STATISTICS -->
+        <section class="admin-section">
+
+            <h2>BUSINESS OVERVIEW</h2>
+
+            <div class="admin-stats-grid">
+
+                <div class="admin-stat-card">
+                    <span>TOTAL BOOKINGS</span>
+                    <strong>{{ stats.total_bookings or 0 }}</strong>
+                </div>
+
+                <div class="admin-stat-card">
+                    <span>COMPLETED</span>
+                    <strong>{{ stats.completed or 0 }}</strong>
+                </div>
+
+                <div class="admin-stat-card">
+                    <span>PENDING</span>
+                    <strong>{{ stats.pending or 0 }}</strong>
+                </div>
+
+                <div class="admin-stat-card">
+                    <span>APPROVED</span>
+                    <strong>{{ stats.approved or 0 }}</strong>
+                </div>
+
+            </div>
+
+            <div class="admin-revenue">
+                <span>TOTAL BUSINESS REVENUE</span>
+                <strong>GH₵{{ stats.revenue or 0 }}</strong>
+            </div>
+
+        </section>
+
+
+        <!-- CUSTOMER APPOINTMENTS -->
+        <section class="admin-section">
+
+            <h2>CUSTOMER APPOINTMENTS</h2>
+
+            <!-- BRANCH FILTER -->
+            <div class="admin-control-card">
+
+                <form method="GET"
+                      action="{{ url_for('admin_dashboard') }}">
+
+                    <label for="branch">FILTER BY BRANCH</label>
+
+                    <select name="branch" id="branch"
+                            onchange="this.form.submit()">
+
+                        <option value="All"
+                            {% if branch_filter == 'All' %}selected{% endif %}>
+                            All Branches
+                        </option>
+
+                        <option value="Branch 1"
+                            {% if branch_filter == 'Branch 1' %}selected{% endif %}>
+                            Ntankoful Branch
+                        </option>
+
+                        <option value="Branch 2"
+                            {% if branch_filter == 'Branch 2' %}selected{% endif %}>
+                            Anaji Branch
+                        </option>
+
+                    </select>
+
+                </form>
+
+            </div>
+
+
+            <!-- SEARCH BOOKINGS -->
+            <div class="admin-control-card">
+
+                <label for="bookingSearch">SEARCH APPOINTMENTS</label>
+
+                <input
+                    type="text"
+                    id="bookingSearch"
+                    placeholder="Search name, phone or booking reference..."
+                >
+
+                <p class="admin-small-text">
+                    Type a customer's name, phone number or booking reference.
+                </p>
+
+            </div>
+
+
+            <div class="admin-booking-count">
+                BOOKINGS DISPLAYED: {{ bookings|length }}
+            </div>
+
+
+            <!-- BOOKING LIST -->
+            <div id="appointmentsContainer">
+
+                {% for booking in bookings %}
+
+                    <div class="admin-booking-card appointment-card">
+
+                        <div class="admin-booking-title">
+                            <h3>{{ booking.full_name }}</h3>
+
+                            <span class="admin-booking-id">
+                                #{{ booking.id }}
+                            </span>
+                        </div>
+
+
+                        <div class="admin-booking-details">
+
+                            <div>
+                                <span>Phone</span>
+                                <strong>{{ booking.phone }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Hairstyle</span>
+                                <strong>{{ booking.service }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Branch</span>
+                                <strong>
+                                    {% if booking.branch == 'Branch 1' %}
+                                        Ntankoful
+                                    {% elif booking.branch == 'Branch 2' %}
+                                        Anaji
+                                    {% else %}
+                                        {{ booking.branch }}
+                                    {% endif %}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Price</span>
+                                <strong class="admin-gold">
+                                    GH₵{{ booking.price }}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Date</span>
+                                <strong>{{ booking.appointment_date }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Time</span>
+                                <strong>{{ booking.appointment_time }}</strong>
+                            </div>
+
+                            <div>
+                                <span>Current Status</span>
+                                <strong>{{ booking.status }}</strong>
+                            </div>
+
+                        </div>
+
+
+                        <!-- UPDATE BOOKING STATUS -->
+                        <form method="POST"
+                              action="{{ url_for('update_booking', booking_id=booking.id) }}"
+                              class="admin-status-form">
+
+                            <label>CHANGE APPOINTMENT STATUS</label>
+
+                            <select name="status" required>
+
+                                <option value="Pending"
+                                    {% if booking.status == 'Pending' %}selected{% endif %}>
+                                    Pending
+                                </option>
+
+                                <option value="Approved"
+                                    {% if booking.status == 'Approved' %}selected{% endif %}>
+                                    Approved
+                                </option>
+
+                                <option value="Rejected"
+                                    {% if booking.status == 'Rejected' %}selected{% endif %}>
+                                    Rejected
+                                </option>
+
+                                <option value="Completed"
+                                    {% if booking.status == 'Completed' %}selected{% endif %}>
+                                    Completed
+                                </option>
+
+                                <option value="Cancelled"
+                                    {% if booking.status == 'Cancelled' %}selected{% endif %}>
+                                    Cancelled
+                                </option>
+
+                            </select>
+
+                            <button type="submit" class="gold-button">
+                                UPDATE STATUS
+                            </button>
+
+                        </form>
+
+                    </div>
+
+                {% else %}
+
+                    <p class="admin-empty">
+                        No appointments found.
+                    </p>
+
+                {% endfor %}
+
+            </div>
+
+        </section>
+
+
+        <!-- CUSTOMER REVIEWS -->
+        <section class="admin-section">
+
+            <h2>CUSTOMER REVIEWS</h2>
+
+            {% for review in reviews %}
+
+                <div class="admin-review-card">
+
+                    <p class="gold-text">
+                        {{ review.customer_name }}
+                    </p>
+
+                    <p>{{ review.review }}</p>
+
+                    <form method="POST"
+                          action="{{ url_for('delete_review', review_id=review.id) }}"
+                          onsubmit="return confirm('Delete this review?');">
+
+                        <button type="submit" class="delete-review-button">
+                            DELETE REVIEW
+                        </button>
+
+                    </form>
+
+                </div>
+
+            {% else %}
+
+                <p class="admin-empty">
+                    No customer reviews yet.
+                </p>
+
+            {% endfor %}
+
+        </section>
+
+
+        <!-- LOGOUT -->
+        <div class="admin-bottom">
+
+            <a href="{{ url_for('admin_logout') }}"
+               class="logout-button">
+                LOGOUT FROM ADMIN
+            </a>
+
+        </div>
+
+    </main>
+
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+
+        <h2>OY3 MORE</h2>
+        <p>BARBERSHOP ADMINISTRATION</p>
+
+        <p class="copyright">
+            &copy; 2026 OY3 MORE BARBERSHOP
+        </p>
+
+    </footer>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
