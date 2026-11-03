@@ -5,6 +5,10 @@ from flask import (
     redirect, url_for, session
 )
 
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
+
 import sqlite3
 import os
 from datetime import datetime
@@ -44,7 +48,42 @@ ALLOWED_STATUSES = [
 
 
 # DATABASE CONNECTION
+DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE = "barber_bookings.db"
+
+
+class PostgresConnection:
+    def __init__(self):
+        self.conn = psycopg2.connect(
+            DATABASE_URL,
+            cursor_factory=RealDictCursor
+        )
+
+    def execute(self, query, params=()):
+        query = query.replace("?", "%s")
+
+        if query.strip().upper() == "BEGIN IMMEDIATE":
+            query = "BEGIN"
+
+        cursor = self.conn.cursor()
+        cursor.execute(query, params)
+        return cursor
+
+    def commit(self):
+        self.conn.commit()
+
+    def rollback(self):
+        self.conn.rollback()
+
+    def close(self):
+        self.conn.close()
+
+
+# DATABASE CONNECTION
 def get_db():
+    if DATABASE_URL:
+        return PostgresConnection()
+
     conn = sqlite3.connect(DATABASE)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
@@ -56,52 +95,90 @@ def create_database():
 
     conn = get_db()
 
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS bookings (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            full_name TEXT NOT NULL,
-            phone TEXT NOT NULL,
-            service TEXT NOT NULL,
-            appointment_date TEXT NOT NULL,
-            appointment_time TEXT NOT NULL,
-            status TEXT DEFAULT 'Pending',
-            price INTEGER DEFAULT 0,
-            Branch TEXT DEFAULT 'Branch 1'
-        )
-    """)
+    if DATABASE_URL:
+        # PostgreSQL bookings table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS bookings (
+                id SERIAL PRIMARY KEY,
+                full_name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                service TEXT NOT NULL,
+                appointment_date TEXT NOT NULL,
+                appointment_time TEXT NOT NULL,
+                status TEXT DEFAULT 'Pending',
+                price INTEGER DEFAULT 0,
+                branch TEXT DEFAULT 'Branch 1'
+            )
+        """)
 
-    # Add price column if missing
-    columns = conn.execute(
-        "PRAGMA table_info(bookings)"
-    ).fetchall()
+        conn.execute("""
+            ALTER TABLE bookings
+            ADD COLUMN IF NOT EXISTS price INTEGER DEFAULT 0
+        """)
 
-    column_names = [column['name'] for column in columns]
+        conn.execute("""
+            ALTER TABLE bookings
+            ADD COLUMN IF NOT EXISTS branch TEXT DEFAULT 'Branch 1'
+        """)
 
-    if 'price' not in column_names:
-        conn.execute(
-            "ALTER TABLE bookings ADD COLUMN price INTEGER DEFAULT 0"
-        )
+        # PostgreSQL reviews table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS reviews (
+                id SERIAL PRIMARY KEY,
+                customer_name TEXT NOT NULL,
+                review TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
-    if 'branch' not in column_names:
-         conn.execute(
-        "ALTER TABLE bookings ADD COLUMN branch TEXT DEFAULT 'Branch 1'"
-         )
+    else:
+        # SQLite bookings table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS bookings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name TEXT NOT NULL,
+                phone TEXT NOT NULL,
+                service TEXT NOT NULL,
+                appointment_date TEXT NOT NULL,
+                appointment_time TEXT NOT NULL,
+                status TEXT DEFAULT 'Pending',
+                price INTEGER DEFAULT 0,
+                branch TEXT DEFAULT 'Branch 1'
+            )
+        """)
 
-    # Create customer reviews table
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS reviews (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            customer_name TEXT NOT NULL,
-            review TEXT NOT NULL,
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
+        columns = conn.execute(
+            "PRAGMA table_info(bookings)"
+        ).fetchall()
+
+        column_names = [
+            column['name'].lower() for column in columns
+        ]
+
+        if 'price' not in column_names:
+            conn.execute("""
+                ALTER TABLE bookings
+                ADD COLUMN price INTEGER DEFAULT 0
+            """)
+
+        if 'branch' not in column_names:
+            conn.execute("""
+                ALTER TABLE bookings
+                ADD COLUMN branch TEXT DEFAULT 'Branch 1'
+            """)
+
+        # SQLite reviews table
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS reviews (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                customer_name TEXT NOT NULL,
+                review TEXT NOT NULL,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
     conn.commit()
     conn.close()
-
-
-
 # CUSTOMER HOMEPAGE
 
 @app.route('/')
@@ -199,44 +276,45 @@ def booking():
             except ValueError:
                 error = "Invalid appointment date or time."
 
-        if error is None:
-
+        if not error:
             conn = get_db()
-            conn.execute("BEGIN IMMEDIATE")
 
-            existing = conn.execute("""
-                SELECT id FROM bookings
-                WHERE appointment_date = ?
-                AND appointment_time = ?
-                AND status != 'Cancelled'
-            """, (date, time)).fetchone()
+            try:
+                if DATABASE_URL:
+                    cursor = conn.execute("""
+                        INSERT INTO bookings
+                        (full_name, phone, branch, service,
+                         appointment_date, appointment_time, price)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        RETURNING id
+                    """, (name, phone, branch, service, date, time, price))
 
-            if existing:
-                conn.rollback()
-                conn.close()
-                error = "This appointment time is already booked."
+                    booking_id = cursor.fetchone()['id']
 
-            else:
-                cursor = conn.execute("""
-                    INSERT INTO bookings
-                    (full_name, phone, branch, service,
-                    appointment_date, appointment_time, price)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (name, phone, branch, service, date, time, price))
+                else:
+                    cursor = conn.execute("""
+                        INSERT INTO bookings
+                        (full_name, phone, branch, service,
+                         appointment_date, appointment_time, price)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """, (name, phone, branch, service, date, time, price))
 
-                booking_id = cursor.lastrowid
+                    booking_id = cursor.lastrowid
 
                 conn.commit()
+
+            except Exception:
+                conn.rollback()
+                raise
+
+            finally:
                 conn.close()
 
-                return redirect(
-                    url_for('booking_success',
-                            booking_id=booking_id)
-                )
+            return redirect(
+                url_for('booking_success', booking_id=booking_id)
+            )
 
     return render_template('booking.html', error=error)
-
-    
 # BOOKING SUCCESS PAGE
 
 @app.route('/booking/success/<int:booking_id>')
@@ -496,8 +574,9 @@ def admin_logout():
     return redirect(url_for('admin_login'))
 
 
-# START APPLICATION
+## START APPLICATION
+create_database()
+
 if __name__ == '__main__':
-    create_database()
     app.run(debug=False)
 
